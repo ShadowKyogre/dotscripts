@@ -1,0 +1,51 @@
+#!/bin/sh
+case $1 in
+"-h")
+	Message="Help message for cpzrecent, a compiz-deskmenu pipeitem that displays your recent documents
+	-h: this message
+	-i: use icon mode
+	none: use without icons"
+	;;
+"-i")
+	files=$(
+	cat ~/.recently-used.xbel | grep file:///  | tail -n30 |  cut -d "\"" -f 2 | tac | while read line; 
+	do  
+	file=$(echo "$line")
+	name=$(echo -en "$file" | sed 's,.*/,,' | sed 's/%20/ /g')
+	if [ $(echo $file|grep -E '\.(png|jpe?g)$' ) ];then
+		echo "<item type=\"launcher\"><icon mode1=\"file\">$(echo $line|sed 's|file://||;s|%20| |g')</icon><command>exo-open $line</command><name>$name</name></item>"
+	elif [ $(echo $file|grep -E '\.(docx?|odt)$' ) ];then
+		echo "<item type=\"launcher\"><icon>document</icon><command>exo-open $line</command><name>$name</name></item>"
+	elif [ $(echo $file|grep -E '\.(cc?|hh?|sh|py)$' ) ];then
+		echo "<item type=\"launcher\"><icon>bin</icon><command>exo-open $line</command><name>$name</name></item>"
+	elif [ $(echo $file|grep -E '\.(wmv|flv|mp4)$' ) ];then
+		echo "<item type=\"launcher\"><icon>video-x-generic</icon><command>exo-open $line</command><name>$name</name></item>"
+	elif [ $(echo $file|grep -E '\.(wav|ogg|mp3)$' ) ];then
+		echo "<item type=\"launcher\"><icon>sound</icon><command>exo-open $line</command><name>$name</name></item>"
+	elif [ $(echo $file|grep -E '\.txt$' ) ];then
+		echo "<item type=\"launcher\"><icon>sound</icon><command>exo-open $line</command><name>$name</name></item>"
+	else
+		echo "<item type=\"launcher\"><icon>document-new</icon><command>exo-open $line</command><name>$name</name></item>"
+	fi
+	done);
+	echo "<menu name=\"Documents\" icon=\"document-open-recent\">"
+	echo "$files"
+	echo "<separator/>"
+	echo "<item type=\"launcher\"><icon>editdelete</icon><command>rm ~/.recently-used.xbel</command><name>Clear Recent Documents</name></item>"
+	echo "</menu>"
+	;;
+*)	
+	files=$(
+	cat ~/.recently-used.xbel | grep file:///  | tail -n30 |  cut -d "\"" -f 2 | tac | while read line; 
+	do  
+	file=$(echo "$line")
+	name=$(echo -en "$file" | sed 's,.*/,,' | sed 's/%20/ /g')
+	echo "<item type=\"launcher\"><command>exo-open $line</command><name>$name</name></item>"
+	done);
+	echo "<menu name=\"Documents\">"
+	echo "$files"
+	echo "<separator/>"
+	echo "<item type=\"launcher\"><command>rm ~/.recently-used.xbel</command><name>Clear Recent Documents</name></item>"
+	echo "</menu>"
+	;;
+esac

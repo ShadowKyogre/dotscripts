@@ -1,0 +1,580 @@
+#!/usr/bin/env python2
+
+# Copyright (C) 2009,2010  Xyne
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# (version 2) as published by the Free Software Foundation.
+#
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# METADATA
+# Version: 1.1.1
+
+import locale, mimetypes, os, pipes, re, subprocess, sys, commands
+from optparse import OptionParser
+from pipes import quote
+from xml.sax.saxutils import escape, quoteattr
+mimetypes.init()
+
+# make sure that recursive invocations work
+sys.argv[0] = os.path.abspath(sys.argv[0])
+if not os.access(sys.argv[0], os.X_OK):
+  sys.argv[0] = 'python ' + sys.argv[0]
+
+usrApps = '/usr/share/applications'
+homeApps = os.getenv('HOME') + '/.local/share/applications'
+
+defaults = {}
+mimeinfo = {}
+desktops = {}
+fileMimetypes = {}
+
+
+# This apparently fails on some systems (Gentoo) so default to LC_ALL if it does.
+try:
+  locale.setlocale(locale.LC_ALL, '')
+  lang_code = locale.getdefaultlocale()[0].split(' ', 1)
+except:
+  lang_code = ['en','US']
+
+
+
+def parseDesktop(fpath):
+  desktop = {}
+  if os.path.exists(fpath):
+    try:
+      f = open(fpath)
+    except IOError:
+      print "error: unable to open", fpath
+    else:
+      for line in f.readlines():
+        m = re.search(r'^\s*(.+?)\s*=\s*(.+?)\s*$', line)
+        if m:
+          desktop[m.group(1)] = m.group(2)
+  return desktop
+
+
+
+def getDefaultsList(fpath, defaultsList={}):
+  if os.path.exists(fpath):
+    try:
+      f = open(fpath)
+    except IOError:
+      print "error: unable to open", fpath
+    else:
+      defaultApps = False
+      for line in f.readlines():
+        m = re.search(r'^\[(.+)\]$', line)
+        if m:
+          if m.group(1) == 'Default Applications':
+            defaultApps = True
+          else:
+            defaultApps = False
+          continue
+        if defaultApps:
+          try:
+            mimetype, desktop = map(lambda x: x.strip(), line.split('=', 1))
+          except ValueError:
+            continue
+          else:
+            for d in (usrApps, homeApps):
+              dpath = os.path.join( d, desktop )
+              if os.path.exists(dpath) and not defaultsList.has_key(mimetype):
+                defaultsList[mimetype] = dpath
+                break
+  return defaultsList
+
+
+
+def getMimeinfoCache(fpath):
+  mimeinfo = {}
+  if os.path.exists(fpath):
+    try:
+      f = open(fpath)
+    except IOError:
+      print "error: unable to open", fpath
+    else:
+      mimeCache = False
+      dirpath = os.path.dirname(fpath)
+      for line in f.readlines():
+        m = re.search(r'^\[(.+)\]$', line)
+        if m:
+          if m.group(1) == 'MIME Cache':
+            mimeCache = True
+          else:
+            mimeCache = False
+          continue
+        if mimeCache:
+          mimetype, ds = map(lambda x: x.strip(), line.split('=', 1))
+          mimeinfo[mimetype] = ds
+  return mimeinfo
+
+
+
+def appendMimeinfo(mimeinfo, dpath):
+  for k, v in getMimeinfoCache(os.path.join(dpath, 'mimeinfo.cache')).iteritems():
+    ds = map(lambda x: os.path.join(dpath, x), v.strip(';').split(';'))
+    if mimeinfo.has_key(k):
+      mimeinfo[k].extend(ds)
+    else:
+      mimeinfo[k] = ds
+  return mimeinfo
+
+
+
+def loadMimeinfo():
+  defaults = {}
+  for f in map(lambda x: x + '/defaults.list', (homeApps, usrApps)):
+    defaults = getDefaultsList(homeApps + '/defaults.list', defaults)
+
+  mimeinfo = {}
+  mimeinfo = appendMimeinfo(mimeinfo, homeApps)
+  mimeinfo = appendMimeinfo(mimeinfo, usrApps)
+
+  desktops = {}
+
+  return defaults, mimeinfo, desktops
+
+
+def getDesktop(d):
+  if not desktops.has_key(d):
+    desktops[d] = parseDesktop(d)
+  return desktops[d]
+
+
+
+def getLauncher(fpath, desktop, isDefault=False):
+  if desktop.has_key('Exec'):
+    #command = re.sub(r'(?:\s*%.\s*)\s*$', '', desktop['Exec'])
+    command = parse_exec_key(desktop['Exec'], [fpath])[0]
+  else:
+    return None
+
+  label = None
+  for k in ('Name[' + '_'.join(lang_code) + ']', \
+            'Name[' + lang_code[0] + ']', \
+            'Name' ):
+    if desktop.has_key(k):
+      label = desktop[k]
+      break
+  if label == None:
+    label = os.path.basename(command)
+
+  item = '\n<item type="launcher"><name>' + getLabel(label, 'launchlabel') + '</name>'
+  item += '<command>' + escape(command + ' "' + fpath + '"') + '</command>'
+
+  if desktop.has_key('Icon'):
+	  icon = desktop['Icon']
+	  if re.search("/", icon):
+		  item += '<icon mode1="file">' + icon + '</icon>'
+	  else:
+		  item += '<icon>' + icon + '</icon>'
+
+  item += '</item>'
+  return item, label
+
+
+def getCopyToClipboardItem(what, label):
+  item = '\n<item type="launcher"><name>' + getLabel(label, 'launchlabel') + '</name>'
+  item += '<command>' + escape(sys.argv[0] + ' --copy ' + pipes.quote(what)) + '</command>'
+  item += '</item>'
+  return item
+
+
+def getMimetype(fpath):
+  mimetype = mimetypes.guess_type(fpath)[0]
+  if mimetype == None and fileMimetypes.has_key(fpath):
+    mimetype = fileMimetypes[fpath]
+  return mimetype
+
+
+
+def getLauncherMenu(fpath, label=None, mimetype=None):
+  if mimetype == None:
+    mimetype = getMimetype(fpath)
+
+  if label == None:
+    label = os.path.basename(fpath)
+
+  if defaults.has_key(mimetype):
+    default = defaults[mimetype]
+  else:
+    default = None
+
+  if mimeinfo.has_key(mimetype):
+    ds = mimeinfo[mimetype]
+    n_ds = len(ds)
+  else:
+    ds = []
+    n_ds = 0
+
+  menu = '\n<menu name="' + getLabel(label, 'menu') + '">'
+  if default or n_ds > 0:
+    menu += '\n<separator name="Open with..." icon="stock_open"/>'
+  if default:
+    l = getLauncher(fpath, getDesktop(default), True)
+    if l:
+      menu += l[0]
+      if n_ds > 0:
+        menu += '\n<separator />'
+  items = []
+  for d in ds:
+    if d == default:
+      continue
+    l = getLauncher( fpath, getDesktop(d) )
+    if l:
+      items.append( l )
+
+  includeSeparator = False
+  for item in sorted(items, key=lambda x: x[1]):
+    menu += item[0]
+    if not includeSeparator:
+      includeSeparator = True
+
+  if which('xsel'):
+    menu += '\n<separator name="Copy..." />'
+    menu += getCopyToClipboardItem(fpath, 'path')
+    if mimetype:
+      menu += getCopyToClipboardItem(mimetype, 'mimetype')
+  menu += '\n</menu>'
+  return menu
+
+
+
+
+
+
+
+
+def getDirMenu(dpath, label=None):
+  if label == None:
+    label = os.path.basename(dpath)
+  if label == '..' or label == '.':
+    menu_id = getId(dpath, 'dir')
+  else:
+    menu_id = getId(dpath, 'dirrel')
+  command = sys.argv[0] + " '" + dpath.replace("'","'\\''") + "'" + optstr
+
+  return '<item type="launcher"><icon>folder</icon>' + \
+         '<name>' + getLabel(label, 'menu') + '</name>' + \
+         '<command mode2="pipe">' + command + '</command></item>'
+
+
+def getId(fpath, prefix=''):
+  return quoteattr(prefix + fpath.replace('/','_') )
+
+
+def getLabel(string, tag):
+  # Since Openbox 3.4.8 it is possible to double the first underscore to
+  # escape the creation of a keybind.
+  #if tag != 'separator' and string.find('_') > -1:
+  #  string = string.replace('_','__',1)
+
+  # 3.4.11 made it possible to create keybinds after an underscore, which
+  # necessitated escaping all underscores.
+  if tag != 'separator':
+    string = string.replace('_','__')
+    if tag != 'launchlabel':
+      string = quote(string)
+  return string
+
+
+def getMenu(dpath):
+  if not os.path.exists(dpath):
+    print ""
+    return
+
+  menu = ''
+
+  if os.path.isdir(dpath):
+
+    dirs = []
+    files = []
+    hdirs = []
+    hfiles = []
+
+    popen_args = ['file', '--mime-type', '-L']
+
+    for item in os.listdir(dpath):
+      fpath = os.path.join(dpath, item)
+      popen_args.append(fpath)
+      if item[:1] == '.':
+        if options.no_hidden:
+          continue
+        if os.path.isdir(fpath):
+          hdirs.append((fpath, item))
+        else:
+          hfiles.append((fpath, item))
+      else:
+        if os.path.isdir(fpath):
+          dirs.append((fpath, item))
+        else:
+          files.append((fpath, item))
+
+    if len(popen_args) > 3:
+      for line in subprocess.Popen( popen_args, \
+                    stdout=subprocess.PIPE).communicate()[0].strip().split("\n"):
+        f, m = line.split(':', 1)
+        fileMimetypes[os.path.join(dpath, f.strip())] = m.strip()
+
+    n_dirs = len(dirs)
+    n_hdirs = len(hdirs)
+    n_files = len(files)
+    n_hfiles = len(hfiles)
+
+    if not options.no_self or not options.no_parent:
+      menu += '<separator name="' + getLabel(dpath, 'separator') + '" />'
+    #menu += '<separator label="dirs" />'
+    #dirMimetypes = ('x-directory/normal', 'inode/directory')
+    if not options.no_self:
+      menu += getLauncherMenu(dpath, label='.', mimetype='x-directory/normal')
+    if not options.no_parent:
+      pdpath = os.path.abspath(os.path.join(dpath, '..'))
+      if pdpath != dpath:
+        menu += getDirMenu(pdpath , '..' )
+
+    if n_dirs + n_hdirs > 0:
+      menu += '\n<separator name="dirs" />'
+
+    for d in sorted(dirs):
+       menu += getDirMenu(*d)
+
+    if n_hdirs > 0:
+      if n_dirs > 0:
+        menu += '\n<separator />'
+      menu += '\n<menu name="hidden">'
+      for d in sorted(hdirs):
+        menu += getDirMenu(*d)
+      menu += '\n</menu>'
+
+    if (n_files + n_hfiles) > 0:
+      menu += '\n<separator name="files" />'
+    for f in sorted(files):
+      menu += getLauncherMenu(f[0], label=f[1])
+
+    if n_hfiles > 0:
+      if n_files > 0:
+        menu += '\n<separator />'
+      menu += '\n<menu name="hidden">'
+      for f in sorted(hfiles):
+        menu += getLauncherMenu(*f)
+      menu += '\n</menu>'
+
+  else:
+    menu += getLauncherMenu(dpath)
+
+  print menu
+
+
+
+################################################################################
+# Mimeo code (probably more outside of this section)
+################################################################################
+
+def which(cmd):
+  def isExecutable(fpath):
+    return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+
+  fpath, fname = os.path.split(cmd)
+  if fpath:
+    if isExecutable(cmd):
+      return cmd
+  else:
+    for p in os.environ["PATH"].split(os.pathsep):
+      fpath = os.path.join(p, fname)
+      if isExecutable(fpath):
+        return fpath
+
+  return None
+
+
+# http://standards.freedesktop.org/desktop-entry-spec/latest/ar01s06.html
+def parse_exec_key(key, user_args):
+  #reserved = " \t\n\"\'\\><~|&;$*?#()`"
+  quoted = False
+  escaped = False
+  percent = False
+  # Track field codes which may only occur once and alone.
+  seen = False
+  # Track where to insert replacements for %f and %u.
+  insertion_point = None
+  args = []
+  a = ""
+
+  for c in key:
+    if escaped:
+      escaped = False
+
+    elif percent:
+      percent = False
+      if c == '%':
+        pass
+      else:
+        # skip some fields that appear more than once
+        if 'fFuU'.find(c) > -1:
+          if seen:
+            continue
+          else:
+            seen = True
+
+        if c == 'f' or c == 'u':
+          insertion_point = (len(args), len(a))
+
+        elif c == 'F' or c == 'U':
+          a += '%' + c
+
+        # TODO: implement remaining
+        elif c == 'i':
+          pass
+        elif c == 'c':
+          pass
+        elif c == 'k':
+          pass
+
+        continue
+
+    elif quoted:
+      if c == '\\':
+        escaped = True
+        continue
+      elif c == '"':
+        quoted = False
+        continue
+
+    elif c == '"':
+      quoted = True
+      continue
+
+    elif c == '%':
+      percent = True
+      continue
+
+    elif c == ' ':
+      args.append(a)
+      a = ""
+      continue
+
+    a += c
+
+  args.append(a)
+  cmd = args[0]
+
+  cpath = which(cmd)
+  if not cpath:
+    print "error: apparently invalid executable", cmd
+    #exit(1)
+  args[0] = cpath
+
+  if insertion_point:
+    i, j = insertion_point
+    a = args[i]
+    cmds = []
+    for user_arg in user_args:
+      b = a[:j] + user_arg + a[j:]
+      args[i] = b
+      cmds.append(quote_command(args))
+    return cmds
+
+
+  else:
+    cmd = []
+    complete = False
+    for a in args:
+      if a == "%F" or a == "%U":
+        cmd.extend(user_args)
+        complete = True
+      else:
+        cmd.append(a)
+
+    if not complete:
+      cmd.extend(user_args)
+
+    return [quote_command(cmd)]
+
+
+def quote_command(args):
+  return ' '.join( map(quote, args) )
+
+
+
+
+
+
+
+
+
+
+def pipeToXsel(args, string):
+  try:
+    xsel = subprocess.Popen( ['xsel', args], stdin=subprocess.PIPE )
+  except OSError:
+    print "error: unable to find \"xsel\""
+    exit(1)
+  else:
+    xsel.communicate(input=pipes.quote(string))
+    xsel.wait()
+  return
+
+
+def copy(*args):
+  pipeToXsel('-i', sys.argv[2])
+  pipeToXsel('-ib', sys.argv[2])
+  exit()
+
+
+
+
+
+
+
+def getOptionString(options):
+  optstr = ''
+  if options.no_hidden:
+    optstr += ' --no-hidden'
+  if options.no_parent:
+    optstr += ' --no-parent'
+  if options.no_self:
+    optstr += ' --no-self'
+  return optstr
+
+
+def main():
+  parser = OptionParser(description='See the man page for further details including how to add menus to Openbox.')
+  parser.add_option("--copy", action="callback", callback=copy,
+                    help='internal option for copying to the clipboard')
+
+  parser.add_option("--no-hidden", dest="no_hidden", default=False, action="store_true",
+                    help='do not display hidden files (files which begin with ".")')
+
+  parser.add_option("--no-parent", dest="no_parent", default=False, action="store_true",
+                    help='do not allow navigation to parent directory ("..")')
+
+  parser.add_option("--no-self", dest="no_self", default=False, action="store_true",
+                    help='do not display menu for current directory (".")')
+
+  global options
+  (options, args) = parser.parse_args()
+  global optstr
+  optstr = getOptionString(options)
+
+  if len(args) > 0:
+    dpath = args[0]
+    global defaults, mimeinfo, desktops
+    defaults, mimeinfo, desktops = loadMimeinfo()
+    dpath = os.path.abspath(dpath)
+    getMenu(dpath)
+  else:
+    print "<item label=\"error: no path specified\" />"
+    exit(1)
+
+if __name__ == "__main__":
+    main()

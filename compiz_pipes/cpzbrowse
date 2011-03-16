@@ -1,0 +1,90 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# vim: ts=4:sw=4
+# CC-by-sa, Dirk Sohler, spam@0x7be.de
+
+
+# Command to open files and folders with. Must be something that reads the
+# MIME data and opens the correct application. On my system PCManFM does
+# that very well. You might want to input "xdg-open" here
+cmd = 'exo-open "%s"'
+
+# The header text. This text is shown above all submenus. %s will be replaced
+# with the actual folder name.
+
+
+# Here we go
+
+import os,sys,commands,re
+
+
+def isort(folder):
+    # SCREW THAT SHIT! Why is there no case-insensitive sorting method?
+    tl = [(x.lower(), x) for x in folder]
+    tl.sort()
+    return [x[1] for x in tl]
+
+
+def clean(str):
+    esc = {
+            '&': '&amp;',
+            '"': '&quot;',
+            '\'': '&apos;',
+            '>': '&gt;',
+            '<': '&lt;',
+            '_': '__'
+            }
+    return "".join(esc.get(c,c) for c in str)
+
+def cleancmd(str):
+    esc = {
+            '&': '&amp;',
+            '"': '&quot;',
+            '\'': '&apos;',
+            '>': '&gt;',
+            '<': '&lt;'
+            }
+    return "".join(esc.get(c,c) for c in str)
+
+def printfolders(folders):
+    if (len(folders) > 0):
+        print '<separator name="Folders"/>'
+
+    for folder in isort(folders):
+        #print folder
+        txt = sys.argv[0]+' "'+folder+'"'
+        print ( '<item type="launcher"><name>%s</name><command mode2="pipe">%s</command></item>' % (clean(folder), cleancmd(txt)))
+
+
+def printfiles(files):
+    if (len(files) > 0):
+        print '<separator name="Files"/>'
+
+    for file in isort(files):
+		#print '--test'
+        print (('<item type="launcher"><name>%s</name>'+
+            '<command>'+cmd+'</command></item>')
+            % (clean(os.path.basename(file)),cleancmd(file)))
+
+def main():
+
+    path = sys.argv[1]
+    files = []
+    folders = []
+
+    for item in os.listdir(sys.argv[1]):
+        if re.match("[^\.]", item):
+            if os.path.isdir(os.path.join(path, item)) == False:
+                files.append(os.path.join(path, item))
+            else:
+                folders.append((os.path.join(path, item)))
+
+    print (('<item type="launcher"><name>Open %s</name>'+
+            '<command>'+cmd+'</command></item>')
+            % (clean(os.path.basename(sys.argv[1])),(cleancmd(sys.argv[1]))))
+
+    printfolders(folders)
+    printfiles(files)
+
+if __name__ == '__main__':
+    main()

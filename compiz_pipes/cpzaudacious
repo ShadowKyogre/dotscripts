@@ -1,0 +1,103 @@
+if [ "$1" == "-i" ]; then
+	if (pidof audacious{,2} > /dev/null);
+	then
+	title=$(audtool current-song|sed 's|&|&amp;|g;s|'\''|&apos;|g;s|<|&lt;|g;s|>|&gt;|g;s|\"|&quot;|g;s|_|__|g')
+	playlisttitle=$(audtool current-playlist-name|sed 's|&|&amp;|g;s|'\''|&apos;|g;s|<|&lt;|g;s|>|&gt;|g;s|\"|&quot;|g;s|_|__|g')
+	echo "<separator name=\"Now Playing: $title $(audtool current-song-output-length)@$(audtool current-song-length)\" icon=\"${2:-audacious}\"/>"
+	echo "<item type=\"launcher\"><icon>go-jump</icon><name>Show Audacious</name><command>audacious -m</command></item>"
+	echo "<item type=\"launcher\"><icon>preferences-other</icon><name>Configure Audacious</name><command>audtool preferences-show</command></item>"
+	echo "<separator/>"
+	echo "<menu name=\"$playlisttitle: $(audtool playlist-position)/$(audtool playlist-length)\" icon=\"playlist\">"
+	if [ "$(audtool playlist-shuffle-status)" == "on" ];then 
+		echo "<item type=\"launcher\"><icon>media-playlist-shuffle</icon><name>Turn off shuffle</name><command>audtool playlist-shuffle-toggle</command></item>"
+	else
+		echo "<item type=\"launcher\"><icon>media-playlist-shuffle</icon><name>Turn on shuffle</name><command>audtool playlist-shuffle-toggle</command></item>"
+	fi
+	if [ "$(audtool playlist-repeat-status)" == "on" ];then
+		echo "<item type=\"launcher\"><icon>media-playlist-repeat</icon><name>Turn off repeat</name><command>playlist-repeat-toggle</command></item>"
+	else
+		echo "<item type=\"launcher\"><icon>media-playlist-repeat</icon><name>Turn on repeat</name><command>playlist-repeat-toggle</command></item>"
+	fi
+	echo "<item type=\"launcher\"><icon>find</icon><name>Do a manual jump</name><command>audtool jumptofile-show</command></item>"
+	echo "<item type=\"launcher\"><icon>add</icon><name>Add some files to the playlist</name><command>audtool filebrowser-show</command></item>"
+	currentplaylist=$(audtool playlist-display | while read line; 
+do  
+file=$(echo "$line"|awk 'BEGIN { FS = "|" };{ print $2 }'|sed 's|&|&amp;|g;s|'\''|&apos;|g;s|<|&lt;|g;s|>|&gt;|g;s|\"|&quot;|g;s|_|__|g;s|^ *||g;s| *$||')
+position=$(echo "$line"|awk 'BEGIN { FS = "|" };{ print $1 }'|sed 's| ||')
+if [ "$file" != "" ];then
+		if [ "$file" == "$title" ];then
+		echo "<menu name=\"[*]$file\" icon=\"sound\">"	
+		else
+		echo "<menu name=\"$file\" icon=\"sound\">"
+		fi
+	echo "<item type=\"launcher\"><icon>go-jump</icon><name>Jump to this song</name><command>audtool playlist-jump $position</command></item>"
+	echo "<item type=\"launcher\"><icon>exit</icon><name>Remove this song from the playlist</name><command>audtool playlist-delete $position</command></item>"
+	echo '</menu>'
+fi
+done);
+	echo "$currentplaylist"
+	echo "</menu>"
+	if [ $(audtool playback-paused;echo $?) == 0 ];then
+		echo "<item type=\"launcher\"><icon>stock_media-play</icon><name>Play</name><command>audacious -p</command></item>"
+	else
+		echo "<item type=\"launcher\"><icon>stock_media-pause</icon><name>Pause</name><command>audacious -u</command></item>"
+	fi
+	echo "<item type=\"launcher\"><icon>stock_media-stop</icon><name>Stop</name><command>audacious -s</command></item>"
+	echo "<item type=\"launcher\"><icon>stock_media-next</icon><name>Next</name><command>audacious -f</command></item>"
+	echo "<item type=\"launcher\"><icon>stock_media-prev</icon><name>Previous</name><command>audacious -r</command></item>"
+	echo "<item type=\"launcher\"><icon>stock_stop</icon><name>Quit</name><command>audtool shutdown</command></item>"
+	else
+	echo "<item type=\"launcher\"><icon>${2:-audacious}</icon><name>Audacious</name><command>audacious</command></item>"
+	fi
+else
+	if (pidof audacious{,2} > /dev/null);
+	then
+	title=$(audtool current-song|sed 's|&|&amp;|g;s|'\''|&apos;|g;s|<|&lt;|g;s|>|&gt;|g;s|\"|&quot;|g;s|_|__|g')
+	playlisttitle=$(audtool current-playlist-name|sed 's|&|&amp;|g;s|'\''|&apos;|g;s|<|&lt;|g;s|>|&gt;|g;s|\"|&quot;|g;s|_|__|g')
+	echo "<separator name=\"Now Playing: $title $(audtool current-song-output-length)@$(audtool current-song-length)\"/>"
+	echo "<item type=\"launcher\"><name>Show Audacious</name><command>audacious -m</command></item>"
+	echo "<item type=\"launcher\"><name>Configure Audacious</name><command>audtool preferences-show</command></item>"
+	echo "<separator/>"
+	echo "<menu name=\"$playlisttitle: $(audtool playlist-position)/$(audtool playlist-length)\">"
+	if [ "$(audtool playlist-shuffle-status)" == "on" ];then 
+		echo "<item type=\"launcher\"><name>Turn off shuffle</name><command>audtool playlist-shuffle-toggle</command></item>"
+	else
+		echo "<item type=\"launcher\"><name>Turn on shuffle</name><command>audtool playlist-shuffle-toggle</command></item>"
+	fi
+	if [ "$(audtool playlist-repeat-status)" == "on" ];then
+		echo "<item type=\"launcher\"><name>Turn off repeat</name><command>playlist-repeat-toggle</command></item>"
+	else
+		echo "<item type=\"launcher\"><name>Turn on repeat</name><command>playlist-repeat-toggle</command></item>"
+	fi
+	echo "<item type=\"launcher\"><name>Do a manual jump</name><command>audtool jumptofile-show</command></item>"
+	echo "<item type=\"launcher\"><name>Add some files to the playlist</name><command>audtool filebrowser-show</command></item>"
+	currentplaylist=$(audtool playlist-display | while read line; 
+do  
+file=$(echo "$line"|awk 'BEGIN { FS = "|" };{ print $2 }'|sed 's|&|&amp;|g;s|'\''|&apos;|g;s|<|&lt;|g;s|>|&gt;|g;s|\"|&quot;|g;s|_|__|g;s|^ *||g;s| *$||')
+position=$(echo "$line"|awk 'BEGIN { FS = "|" };{ print $1 }'|sed 's| ||')
+if [ "$file" != "" ];then
+		if [ "$file" == "$title" ];then
+		echo "<menu name=\"[*]$file\">"	
+		else
+		echo "<menu name=\"$file\">"
+		fi
+	echo "<item type=\"launcher\"><name>Jump to this song</name><command>audtool playlist-jump $position</command></item>"
+	echo "<item type=\"launcher\"><name>Remove this song from the playlist</name><command>audtool playlist-delete $position</command></item>"
+	echo '</menu>'
+fi
+done);
+	echo "$currentplaylist"
+	echo "</menu>"
+	if [ $(audtool playback-paused;echo $?) == 0 ];then
+		echo "<item type=\"launcher\"><name>Play</name><command>audacious -p</command></item>"
+	else
+		echo "<item type=\"launcher\"><name>Pause</name><command>audacious -u</command></item>"
+	fi
+	echo "<item type=\"launcher\"><name>Stop</name><command>audacious -s</command></item>"
+	echo "<item type=\"launcher\"><name>Next</name><command>audacious -f</command></item>"
+	echo "<item type=\"launcher\"><name>Previous</name><command>audacious -r</command></item>"
+	echo "<item type=\"launcher\"><name>Quit</name><command>audtool shutdown</command></item>"
+	else
+	echo "<item type=\"launcher\"><name>Audacious</name><command>audacious</command></item>"
+	fi
+fi

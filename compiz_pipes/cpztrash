@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [ "$1" == "" ]; then
+trash=$HOME/.local/share/Trash/files
+else
+trash="$1"
+fi
+
+files=$(
+ls -1 $trash | while read line; 
+do  
+file=$(echo "$line")
+name=$(echo -en "$file" | sed 's,.*/,,' | sed 's/%20/ /g')
+echo "<menu name=\"$name\">"
+	echo "<item type=\"launcher\"><command>exo-open $trash/$line</command><name>Open this Item</name></item>"
+	echo "<item type=\"launcher\"><command>rm -f $trash/$line</command><name>Delete this Item</name></item>"
+echo "</menu>"
+done);
+echo "<item type=\"launcher\"><command>exo-open $trash</command><name>Open Trash - $(ls -h -s $trash|head -n 1|sed 's/total/Size:/')</name></item>"
+echo "<item type=\"launcher\"><command>rm -rf $trash/*</command><name>Empty Trash - $(ls -h -s $trash|head -n 1|sed 's/total/Frees:/')</name></item>"
+echo "<separator/>"
+echo "$files"

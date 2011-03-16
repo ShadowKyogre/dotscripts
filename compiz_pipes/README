@@ -1,0 +1,26 @@
+Do NOT thank me for creating these pipemenus for compiz-boxmenu. 
+These are just ported from some openbox pipemenus. 
+If you know the authors, please thank them, they're the real makers of these.
+I just ported them.
+
+Most of these have a _icon and normal named variant. For those ones, use the <command>_icon version to get icons for these pipeitems.
+The ones you don't thank me for making (just for porting):
+cpzbookmarks (don't know author)
+cpzbookmarks_icons (don't know author)
+cpztrash (don't know author)
+cpztrash_icons (don't know author)
+cpzcalendar.sh (don't know author, appeared at http://openbox.org/wiki/Openbox:Pipemenus:Date_Menu)
+cpzcalendar_icons.sh (don't know author, appeared at http://openbox.org/wiki/Openbox:Pipemenus:Date_Menu)
+cpzplaces.sh (don't know author, appeared at http://david.chalkskeletons.com/scripts/bookmarks.sh)
+cpzplaces_icons.sh (don't know author, appeared at http://david.chalkskeletons.com/scripts/bookmarks.sh)
+cpzbrowse (By Dirk Sohler)
+cpzfilebrowser (Copyright (C) 2009,2010 Xyne | check out the official implementation at http://xyne.archlinux.ca/projects/obfilebrowser/)
+And much more that I need to update this...
+
+Here are the ones you can thank me for:
+cpzaudacious (manages Audacious in a simple menu)
+manage_menus.sh (pulls up a list of menu files in your $XDG_CONFIG_HOME/compiz/boxmenu folder and displays them for editing)
+
+How to use (the ones I made):
+cpzaudacious -i (if you want icons) <icon of choice for audacious, by name only for now>
+manage_menus.sh -i (if you want icons) <icon of choice for menu, by name only for now> <icon of choice for items, by name only for now>
