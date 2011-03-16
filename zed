@@ -1,0 +1,240 @@
+#!/bin/sh
+
+#       z3d
+#       
+#       Copyright 2010 Sapphira Armageddos <shadowkyogre@myhost>
+mode=""
+txt=""
+
+function check(){
+	if [ -z "$(cat "$txt")" ];then
+		zenity --error --text="I can't garble with nothing!"
+		exit 1
+	fi
+	}
+
+function check2(){
+	if [ "$mode" == "" ];then
+		zenity --error --text="I can't garble without a method!"
+		exit 1
+	fi
+	}
+
+function which(){
+	mode=$(zenity  --list --column="" --column=Language --column=Code --radiolist --print-column=3 \
+		--window-icon="$HOME/.icons/Breathless/48x48/apps/Textapplications.png" \
+		--text="Garbling method?" \
+		--hide-column=3 \
+		'' "Al Bhed to English" "albhed2eng" \
+		'' "English to Al Bhed" "eng2albhed" \
+		'' "Dinosaur to English" "dino2eng" \
+		'' "English to Dinosaur" "eng2dino" \
+		'' "QWERTYboard to English" "qwerty2eng" \
+		'' "English to QWERTYboard" "eng2qwerty" \
+		'' "Alphe-Terran to English" "alpheterra2eng" \
+		'' "English to Alphe-Terran" "eng2alpheterra" \
+		'' "L33t to English" "l33t2eng" \
+		'' "English to L33t" "eng2l33t" \
+		'' "ALL CAPS" "ALLCAPS" \
+		'' "no capitalization" "nocaps" \
+		'' "No empty lines" "noemptylines" \
+		'' "No trailing spaces" "notrailspaces" \
+		'' "No useless spaces" "noheadtailspaces" \
+		'' "No punctuation" "nopuncs" \
+		'' "No vowels" "novowels" \
+		'' "Flip it ALL AROUND" "oppositeday" \
+		'' "DNUORNA LLA it pliF" "yadetisoppo")
+}
+
+function stitch(){
+	echo "Your original text." > /tmp/lookup3.txt
+	cat "$txt" >> /tmp/lookup3.txt
+	echo "" >> /tmp/lookup3.txt
+	echo "" >> /tmp/lookup3.txt
+	echo "Your text garbled in $mode" >> /tmp/lookup3.txt
+	cat /tmp/lookup2.txt >> /tmp/lookup3.txt
+	rm -i /tmp/lookup2.txt
+	mv -i /tmp/lookup3.txt /tmp/lookup2.txt
+	}
+	
+function garble(){
+	case $mode in
+	"albhed2eng")
+		echo "Garbling from Al Bhed to English..."
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ypltavkrezgmshubxncdijfqozYPLTAVKREZGMSHUBXNCDIJFQOZ/ "$txt" > /tmp/lookup2.txt
+		;;
+	"eng2albhed")
+		echo "Garbling from English to Al Bhed..."
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/epstiwknuvgclrybxhmdofzqajEPSTIWKNUVGCLRYBXHMDOFZQAJ/ "$txt" > /tmp/lookup2.txt
+		;;
+	"dino2eng")
+		echo "Garbling from Dinosaur to English..."
+		sed y/urstovwxazbcmdefghjkilnp@qURSTOVWXAZBCMDEFGHJKILNP0Q/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ "$txt" > /tmp/lookup2.txt
+		;;
+	"eng2dino")
+		echo "Garbling from English to Dinosaur..."
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/urstovwxazbcmdefghjkilnp@qURSTOVWXAZBCMDEFGHJKILNP0Q/ "$txt" > /tmp/lookup2.txt
+		;;
+	"qwerty2eng")
+		echo "Garbling from QWERTYboard to English..."
+		sed y/qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ "$txt" > /tmp/lookup2.txt
+		;;
+	"eng2qwerty")
+		echo "Garbling from English to QWERTYboard..."
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM/ "$txt" > /tmp/lookup2.txt
+		;;
+	"alpheterra2eng")
+		echo "Garbling from Alphe-Terran to English..."
+		sed y/ostraqzyipwvhgexdcbfunjlmkOSTRAQZYIPWVHGEXDCBFUNJLMK/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ "$txt" > /tmp/lookup2.txt
+		;;
+	"eng2alpheterra")
+		echo "Garbling from English to Alphe-Terran..."
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ostraqzyipwvhgexdcbfunjlmkOSTRAQZYIPWVHGEXDCBFUNJLMK/ "$txt" > /tmp/lookup2.txt
+		;;
+	"l33t2eng")
+		echo "Garbling from readable L33t to English..."
+		sed s%'\/-\\'%A%g "$txt" | \
+		sed s%'|3'%B%g | \
+		sed s%'('%C%g | \
+		sed s%'|)'%D%g | \
+		sed s%'\&'%E%g | \
+		sed s%'|='%F%g | \
+		sed s%'\[_-'%g%g | \
+		sed s%'|-|'%H%g | \
+		sed s%'!'%I%g | \
+		sed s%'-_7'%J%g | \
+		sed s%'|<'%K%g | \
+		sed s%'|_'%L%g | \
+		sed s%'|\\\/|'%M%g | \
+		sed s%'|\\|'%N%g | \
+		sed s%'\[\]'%O%g | \
+		sed s%'|"'%P%g | \
+		sed s%'(,)'%Q%g | \
+		sed s%'|?'%R%g | \
+		sed s%"_|'"%S%g | \
+		sed s%'-+-'%T%g | \
+		sed s%'|_|'%U%g | \
+		sed s%'\\\/'%V%g | \
+		sed s%'\\|\/'%W%g | \
+		sed s%"><"%X%g | \
+		sed s%'`|`'%Y%g | \
+		sed s%'>_'%Z%g > /tmp/lookup2.txt
+		;;
+	"eng2l33t")
+		echo "Garbling from English to readable L33t..."
+		sed s/[Aa]/'\/-\\'/g "$txt" | \
+		sed s/[Bb]/'|3'/g | \
+		sed s/[Cc]/'('/g | \
+		sed s/[Dd]/'|)'/g | \
+		sed s/[Ee]/'\&'/g | \
+		sed s/[Ff]/'|='/g | \
+		sed s/[Gg]/'[_-'/g | \
+		sed s/[Hh]/'|-|'/g | \
+		sed s/[Ii]/'!'/g | \
+		sed s/[Jj]/'-_7'/g | \
+		sed s/[Kk]/'|<'/g | \
+		sed s/[Ll]/'|_'/g | \
+		sed s/[Mm]/'|\\\/|'/g | \
+		sed s/[Nn]/'|\\|'/g | \
+		sed s/[Oo]/'[]'/g | \
+		sed s/[Pp]/'|"'/g | \
+		sed s/[Qq]/'(,)'/g | \
+		sed s/[Rr]/'|?'/g | \
+		sed s/[Ss]/" _|'"/g | \
+		sed s/[Tt]/'-+-'/g | \
+		sed s/[Uu]/'|_|'/g | \
+		sed s/[Vv]/'\\\/'/g | \
+		sed s/[Ww]/'\\|\/'/g | \
+		sed s/[Xx]/'><'/g | \
+		sed s/[Yy]/'\`|\`'/g | \
+		sed s/[Zz]/'>_'/g > /tmp/lookup2.txt
+		;;
+	"ALLCAPS")
+		echo 'MAKING EVERYTHING CAPS!'
+		sed y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/ "$txt" > /tmp/lookup2.txt
+		;;
+	"nocaps")
+		echo "Removing capitalization..."
+		sed y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/ "$txt" > /tmp/lookup2.txt
+		;;
+	"noemptylines")
+		echo "Removing useless lines..."
+		sed '/^$/d' "$txt" > /tmp/lookup2.txt
+		;;
+	"notrailspaces")
+		echo "Removing trailing spaces..."
+		sed 's/[ \t]*$//' "$txt" > /tmp/lookup2.txt
+		;;
+	"noheadtailspaces")
+		echo "Removing useless spaces..."
+		sed 's/^[ \t]*//;s/[ \t]*$//' "$txt" > /tmp/lookup2.txt
+		;;
+	"nopuncs")
+		echo "Removing punctuation..."
+		sed s/[^a-zA-Z0-9]/""/g "$txt" > /tmp/lookup2.txt
+		;;
+	"novowels")
+		echo "Removing vowels..."
+		sed s/[aeiouAEIOU]/""/g "$txt" > /tmp/lookup2.txt
+		;;
+	"oppositeday")
+		echo "Reversing the WHOLE GNIKCUF GNIHT..."
+		#reverse line order, like tac
+		sed '1!G;h;$!d' "$txt" | \
+		#reverse characters, like rev
+		sed '/\n/!G;s/\(.\)\(.*\n\)/&\2\1/;//D;s/.//' | \
+		#reverse capilatization
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/ | \
+		#reverse the alphabet
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA/ | \
+		#reverse numbers
+		sed y/0123456789/9876543210/ > /tmp/lookup2.txt
+		;;	
+	"yadetisoppo")
+		echo "...THING FUCKING ELOHW eht gnisreveR"
+		#reverse numbers
+		sed y/0123456789/9876543210/ "$txt" | \
+		#reverse the alphabet
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA/ | \
+		#reverse capilatization
+		sed y/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/ | \
+		#reverse characters, like rev
+		sed '/\n/!G;s/\(.\)\(.*\n\)/&\2\1/;//D;s/.//' | \
+		#reverse line order, like tac
+		sed '1!G;h;$!d' > /tmp/lookup2.txt
+		;;	
+	esac
+}
+
+function main(){
+	case $1 in
+	"-h")
+		echo "z3d, a GUI garbler that uses sed."
+		echo "Usage: z3d <flag>"
+		echo "-h: this message."
+		echo "-f: garble a file."
+		;;
+	"-f")
+		txt="$(zenity --file-selection --window-icon="$HOME/.icons/Breathless/48x48/apps/Textapplications.png" --title="Your text?" --file-filter=*.txt)"
+		check
+		which
+		check2
+		garble
+		stitch
+		zenity --text-info --filename="/tmp/lookup3.txt" --window-icon="$HOME/.icons/Breathless/48x48/apps/Textapplications.png" --title="$txt garbled in $mode" 
+		;;
+	"")
+		zenity --text-info --editable --window-icon="$HOME/.icons/Breathless/48x48/apps/Textapplications.png" --title="Your text?" > /tmp/lookup.txt
+		txt="/tmp/lookup.txt"
+		echo "Your original is stored in /tmp/lookup.txt."
+		check
+		which
+		check2
+		garble
+		stitch
+		zenity --text-info --filename="/tmp/lookup2.txt" --window-icon="$HOME/.icons/Breathless/48x48/apps/Textapplications.png" --title="$txt garbled in $mode" 
+		;;
+esac
+}
+
+main
