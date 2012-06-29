@@ -10,8 +10,16 @@ commit_data=re.compile((r'commit[ ]*([0-9a-f]*)\n'
 r'Author:[ ]*([^\n]*)\n'
 r'Date:[ ]*([^\n]*)\n{2}'
 r'([ ]+[^\n]*\n)*\n'))
+on_branch = re.compile(r'^# On branch (.*)$')
 
-commits = subprocess.check_output(['git','rev-list','--all','--pretty'])
+curbranch = subprocess.check_output(['git','status'])
+curbranch = curbranch.decode(sys.getdefaultencoding()).splitlines()[0]
+curbranch = on_branch.findall(curbranch)[0]
+
+commits = subprocess.check_output(['git','rev-list',
+				'--branches',curbranch,
+				'--pretty'])
+
 commits = commits.decode(sys.getdefaultencoding())
 
 log_by_date=od([])
