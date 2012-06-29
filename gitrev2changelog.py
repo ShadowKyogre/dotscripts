@@ -22,13 +22,11 @@ for commit in commit_data.findall(commits):
 		log_by_date[date]={'authors':set([]),
 			'changes':[]}
 	log_by_date[date]['authors'].add(commit[1])
-	#print(commit)
 	changelog_entry = '\n'.join([l.strip() for l in commit[3].splitlines()])
 	log_by_date[date]['changes'].append(changelog_entry)
 
 f=open('CHANGELOG.md','w')
 for key,item in log_by_date.items():
-	print(item)
 	f.write('{}\n====\n'.format(key.strftime('%m/%d/%Y')))
 	f.write("Authors\n")
 	for a in item['authors']:
