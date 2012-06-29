@@ -2,8 +2,7 @@
 import subprocess
 import re
 import sys
-import datetime
-from dateutil import parser
+from datetime import datetime
 from collections import OrderedDict as od
 import argparse
 
@@ -20,13 +19,13 @@ def write_changelog(single_user=False):
 
 	commits = subprocess.check_output(['git','rev-list',
 					'--branches',curbranch,
-					'--pretty'])
+					'--pretty','--date=short'])
 	commits = commits.decode(sys.getdefaultencoding())
 
 	log_by_date=od([])
 
 	for commit in commit_data.findall(commits):
-		date = parser.parse(commit[2]).date()
+		date = datetime.strptime(commit[2],'%Y-%m-%d').date()
 		if date not in log_by_date.keys():
 			log_by_date[date]={}
 			if not single_user:
