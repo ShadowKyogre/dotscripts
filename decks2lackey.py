@@ -62,7 +62,7 @@ def YVD2Lackey(deck, out="."):
 		print(db_data)
 		if not side:
 			if goes_in_extra.search(db_data[3]) is not None:
-				extra_lineFs.append("{}\t{}".format(row[0],row[2]))
+				extra_lines.append("{}\t{}".format(row[0],row[2]))
 			else:
 				main_lines.append("{}\t{}".format(row[0],row[2]))
 		else:
@@ -101,9 +101,6 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='decks2lackey', description="Convert other decks to LackeyCCG deck format!")
 	parser.add_argument('decks', metavar='N', type=str, nargs='+',
 						help='decks to process')
-	parser.add_argument('-f','--file', 
-					 help='URLs are text files listing links',
-					 action='store_true')
 	parser.add_argument('-d','--directory', help='Save the file in this directory', default=".")
 
 	args = parser.parse_args(os.sys.argv[1:])
