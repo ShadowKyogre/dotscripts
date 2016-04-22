@@ -1,7 +1,7 @@
 #!/bin/sh
 
-DYN_FORMAT="${1:-#I:#T#F}"
-STATIC_FORMAT="${2:-#I:#W#F}"
+DYN_FORMAT="${1:-#I:#T#{?window_flags,#{window_flags\}, }}"
+STATIC_FORMAT="${2:-#I:#W#{?window_flags,#{window_flags\}, }}"
 
 current_format="$(tmux display-message -p '#{window-status-format}')" 
 
