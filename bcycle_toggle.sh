@@ -27,5 +27,5 @@ if [  "$(tmux show-window-options -vt "${bc_id}" "${toggle_opt}")" -eq 0 ];then
 else
 	tmux set-window-option -t "${bc_id}" "${toggle_opt}" 0
 	notify-send "Unpaused timer"
-	notify_all_clients "Paused timer"
+	notify_all_clients "Unpaused timer"
 fi
