@@ -1,0 +1,11 @@
+#!/bin/sh
+echo "<item type=\"launcher\">"
+echo "   <icon>.face</icon>"
+echo "   <command>mtpaint ~/.face</command>"
+echo "   <name mode=\"exec\">sh -c 'echo \$(whoami)\@\$(hostname)'</name>"
+echo "</item>"
+echo "<item type=\"launcher\">"
+echo "   <icon>.face</icon>"
+echo "   <command>mtpaint ~/.face</command>"
+echo "   <name mode=\"exec\">sh -c 'echo \$(whoami)\@\$(hostname)'</name>"
+echo "</item>"
