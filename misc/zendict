@@ -1,0 +1,121 @@
+#!/bin/sh
+
+#just comment/delete the window line if you don't have the icons
+#dics=$(echo "$(dict -D -f|sed s/"dict.org"/''/|sed s/2628/\'\'/|sed '$q;s/$/ \\/g')")
+#dics=$(dict -D -f|sed s/"Databases available:"/""/|sed s/"Databases available:"/""/|sed s/^/\'\''\t'/|awk -F '\t' '{print $1, "\42"$4"\42", "\42"$5"\42"}'|sed '$q;s/$/ \\/g')
+dbs=""
+function where(){
+	dbs=$(zenity  --list --column="" --column=Database --column=Code --checklist --print-column=3 \
+		--window-icon="$HOME/.icons/Breathless/48x48/apps/kdict.png" \
+		--text="What are the selected databases about?" --title="Select database" \
+		--hide-column=3 --separator=" -d " \
+		'' "Everywhere" "" \
+		'' "Wordnet" "wn" \
+		'' "The Collaborative International Dictionary of English" "gcide" \
+		'' "Moby Thesaurus II" "moby-thes" \
+		'' "Webster's Revised Unabridged Dictionary" "web1913" \
+		'' "The Devil's Dictionary" "devils" \
+		'' "Publication Information for The World Factbook 1995" "world95" \
+		'' "Easton's 1897 Bible Dictionary" "easton" \
+		'' "Hitchcock's Bible Names Dictionary" "hitchcock" \
+		'' "Bouvier's Law Dictionary" "bouvier" \
+		'' "CIA World Factbook 2002" "world02" \
+		'' "Free On-line Dictionary of Computing" "foldoc" \
+		'' "Elements database 20001107" "elements" \
+		'' "V.E.R.A. (list dealing with computational acronyms)" "vera" \
+		'' "Jargon File (comprehensive compendium of hacker slang)" "jargon" \
+		'' "U.S. Gazetteer" "gazetteer" \
+		'' "U.S. Gazetteer Countries" "gaz-county" \
+		'' "U.S. Gazetteer Places" "gaz-place" \
+		'' "U.S. Gazetteer Zip Codes" "gaz-zip")
+	}
+function check(){
+	if [ -z $word ]; then
+	zenity --error --text="I can't look up no text!"
+	exit 1
+	fi
+	}
+
+case $1 in
+"-i")
+	where
+	if [ "$dbs" == "" ]; then
+		dict -i wn gcide moby-thes web1913 devils world95 easton hitchcock \
+		bouvier world02 foldoc elements vera jargon gazetteer gaz-country gaz-place gaz-zip > /tmp/lookup.txt
+	else
+		dict -d $dbs > /tmp/lookup.txt
+	fi
+	zenity --text-info --filename=/tmp/lookup.txt \
+	--window-icon="$HOME/.icons/Breathless/48x48/apps/kdict.png" \
+	--title="Database info lookup complete"
+	exit
+	;;
+"-m")
+	word=$(zenity --entry --title="Look up a word" --text="What do you want to match?" --window-icon="$HOME/.icons/Breathless/48x48/apps/kdict.png")
+	check
+	strategy=$(zenity  --list --column="" --column=Code --column=Strategies --checklist --print-column=2 \
+		--window-icon="$HOME/.icons/Breathless/48x48/apps/kdict.png" \
+		--text="How do you want to match the word?" --title="Select matching method" \
+		--hide-column=2 --separator=" -s " \
+		'' exact      "Match headwords exactly" \
+		'' prefix     "Match prefixes" \
+		'' substring "Match substring occurring anywhere in a headword" \
+		'' suffix     "Match suffixes" \
+		'' re        "POSIX 1003.2 (modern) regular expressions" \
+		'' regexp    "Old (basic) regular expressions" \
+		'' soundex   "Match using SOUNDEX algorithm" \
+		'' lev       "Match headwords within Levenshtein distance one" \
+		'' word      "Match separate words within headwords")
+	where
+	if [ "$dbs" == "" ]; then
+		if [ $strategy == "" ];then
+		dict -m $word > /tmp/lookup.txt	
+		else
+		dict -m $word -s $strategy > /tmp/lookup.txt
+		fi
+	else
+		if [ $strategy == "" ];then
+		dict -m --database $dbs $word > /tmp/lookup.txt
+		else
+		dict -m --database $dbs $word -s $strategy > /tmp/lookup.txt
+		fi
+	fi
+	zenity --text-info --filename=/tmp/lookup.txt \
+	--window-icon="$HOME/.icons/Breathless/48x48/apps/kdict.png" \
+	--title="Match complete"
+	exit
+	;;
+"-h")
+	echo "Usage:"
+	echo "No arguments: Use the GUI to look up words."
+	echo "-m: Use the GUI to match query."
+	echo "-i: Use the GUI to get information on databases."
+	echo "-h: This message."
+	exit
+	;;
+"")
+	word=$(zenity --entry --title="Look up a word" --text="What word do you want to define?" --window-icon="$HOME/.icons/Breathless/48x48/apps/kdict.png")
+		check
+		where
+		if [ "$dbs" == "" ]; then
+			dict $word > /tmp/lookup.txt
+		else
+			dict --database $dbs $word > /tmp/lookup.txt
+		fi
+		zenity --text-info --filename=/tmp/lookup.txt \
+		--window-icon="$HOME/.icons/Breathless/48x48/apps/kdict.png" \
+		--title="Definition lookup complete"
+	exit
+	;;
+esac
+
+# kdialog --caption "Select matching method" --radiolist "How do you want to match the word?" \
+# 		exact "Match headwords exactly" on \
+# 		prefix "Match prefixes" off \
+# 		substring "Match substring occurring anywhere in a headword" off \
+# 		suffix "Match suffixes" off \
+# 		re "POSIX 1003.2 (modern) regular expressions" off \
+# 		regexp "Old (basic) regular expressions" off \
+# 		soundex "Match using SOUNDEX algorithm" off \
+# 		lev "Match headwords within Levenshtein distance one" off \
+# 		word "Match separate words within headwords" off
