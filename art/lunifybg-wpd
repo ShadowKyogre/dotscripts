@@ -1,0 +1,135 @@
+#!/bin/sh
+
+if [[ -d "$XDG_CACHE_HOME" ]]
+then
+	mkdir -p "$XDG_CACHE_HOME"
+fi
+cd -- "$XDG_CACHE_HOME"
+
+# Use a subdirectory to save images of the moon. It's interesting to cycle
+# through them with feh to see it move.
+mkdir -pv luna
+
+function display_help()
+{
+	echo "usage: $0 <refresh|show|clear|help>"
+	echo "	refresh - download current image of the moon"
+	echo "	show - create composite background with last image of the moon"
+	echo "	clear - reset the background"
+	echo "options: edit the script to change composition parameters"
+	echo "				 see http://www.imagemagick.org/Usage/compose/ for help"
+	echo "dependencies: wallpaperd, sed, grep, imagemagick, wget"
+}
+
+if [[ -z $1 ]]
+then
+	display_help
+	exit 1
+fi
+
+if [[ -f ~/.wallpaperd.cfg ]]
+then
+	if [[ ! -f ~/.config/wallpaperd/orig ]]
+	then
+		mkdir -vp ~/.config/wallpaperd
+		mv -v ~/.wallpaperd.cfg ~/.config/wallpaperd/orig
+	fi
+	if [[ $1 == refresh ]];then
+		cp -v ~/.config/wallpaperd/{orig,lunarized}
+	fi
+else
+	echo "~/.wallpaperd.cfg does not exist"
+	exit 1
+fi
+
+function clear_wallpaperd() {
+	rm -v ~/.wallpaperd.cfg
+	cp -vf ~/.config/wallpaperd/orig ~/.wallpaperd.cfg
+}
+
+function update_wallpaperd() {
+	searchpath="$(grep 'path\.search' ~/.config/wallpaperd/orig|cut -d= -f2-)"
+	wallpapers=$(grep 'wallpaper\.[^\.]*\.image' ~/.config/wallpaperd/orig)
+
+	moon_img=$(pre_refresh)
+	if ! $(echo "$searchpath" | grep "$XDG_CACHE_HOME/luna");then
+		sed -e "s@$searchpath@${searchpath}:$XDG_CACHE_HOME/luna@g" -i ~/.config/wallpaperd/lunarized
+	fi
+
+	grep '^wallpaper\.[^\.]*\.image' ~/.config/wallpaperd/lunarized|while read line;do
+		place="$(echo "$line"|cut -d. -f2)"
+		bg_img="$(echo "$line"|cut -d. -f3-|cut -d= -f2)"
+		for i in $(echo $searchpath | tr ":" "\n")
+		do
+			echo "${i/\~/$HOME}/$bg_img exists?"
+			if [[ -e "${i/\~/$HOME}/$bg_img" ]]
+			then
+				echo "Found $bg_img in $i, now lunarizing"
+				update_wallpaper "$place" "${i/\~/$HOME}" "$bg_img" "$moon_img"
+				break
+			fi
+		done
+	done
+	rm -v ~/.wallpaperd.cfg
+	cp -vf ~/.config/wallpaperd/lunarized ~/.wallpaperd.cfg
+}
+
+function update_wallpaper()
+{
+	# Path to the composite image.
+	comp_img=luna/"bg-desktop-${1}.jpg"
+	# The original background image.
+	bg_img="$2/$3"
+	# Update the command to use the composite image and avoid overwriting ~/.fehbg.
+	refresh "$bg_img" "$4" "$comp_img" "${5:-northeast}"
+	sed -e "s@^wallpaper.${1}.image=${3}@wallpaper.${1}.image=bg-desktop-${1}.jpg@g" \
+		-i ~/.config/wallpaperd/lunarized
+}
+
+# Create new bg image with current image of moon.
+function pre_refresh()
+{
+	moon_img="luna/moon-$(date +'%Y.%m.%d.%H.%M.%S.png')"
+	wget -O "$moon_img" 'http://api.usno.navy.mil/imagery/moon.png'
+	echo "$moon_img"
+}
+
+function refresh()
+{
+	bg_img="$1"
+	moon_img="$2"
+	comp_img="$3"
+	placement="${4:-northeast}"
+	convert -trim "$moon_img" - | \
+	composite -compose Screen -gravity $placement - "$bg_img" "$comp_img"
+}
+
+
+while [[ ! -z $1 ]]
+do
+	case "$1" in
+		refresh)
+			update_wallpaperd
+		;;
+
+		show)
+			wallpaperd -s
+			wallpaperd
+		;;
+
+		clear)
+			clear_wallpaperd
+		;;
+
+		-h | --help | help)
+			display_help
+			exit 0
+		;;
+
+		*)
+			display_help
+			exit 1
+		;;
+	esac
+	shift
+done
