@@ -7,7 +7,9 @@ then
 	tmux rename-window breakcycle
 	tmux-pane-window-fmt.sh
 fi
-local first_loop=1 
+
+first_loop=1 
+
 while true
 do
 	if [ -n "$TMUX" ]; then
