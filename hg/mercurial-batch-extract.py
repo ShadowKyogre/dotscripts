@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 from argparse import ArgumentParser
 from os import path, makedirs
@@ -27,29 +27,42 @@ parser.add_argument('-x', '--ssh-suffix',
 	default='',
 	help='ssh specific suffixes for template')
 
-parser.add_argument('-u', '--user',
+parser.add_argument('-o', '--owner',
 	default='<FakeUser>',
 	help='User for push urls')
 
+parser.add_argument('-u', '--user',
+	default='<FakeUser>',
+	help='User for commits')
+
 parser.add_argument('-e', '--email',
 	default=None,
-	help='Email for push urls')
+	help='Email for commits')
+
+parser.add_argument('-t', '--template',
+	default=BB_TEMPLATE,
+	help='Template for push urls')
 
 parser.add_argument('filemaps', nargs='+')
 
 args = parser.parse_args()
 
 if not path.exists(args.dest):
-	os.makedirs(args.dest)
+	makedirs(args.dest)
+
+if args.email is not None:
+	wip_user = "{0} <{1}>".format(args.user, args.email)
+else:
+	wip_user = args.user
 
 for fmap in args.filemaps:
 	repo_name = path.splitext(path.basename(fmap))[0]
-	repo_path = os.path.join(args.dest, repo_name)
+	repo_path = path.join(args.dest, repo_name)
 
 	subprocess.call([
 		'hg', 'convert',
 		'--filemap', fmap,
-		args.target,
+		args.source,
 		repo_path,
 	])
 
@@ -64,22 +77,27 @@ for fmap in args.filemaps:
 		])
 
 	if args.generate_push_urls:
+		hgrc = path.join(hg_path, 'hgrc')
+		filled_tpl = args.template.format(**{
+			'repo_name':repo_name,
+			'user': args.owner,
+			'ssh_suffix':args.ssh_suffix,
+		})
+
 		if hg_exist:
-			with open(path.join(hg_path, 'hgrc'), 'a', encoding='utf-8') as f:
-				filled_tpl = args.template.format({
-					'repo_name':repo_name,
-					'user': args.user,
-					'ssh_suffix':args.ssh_suffix,
-				})
-
-				if args.email is not None:
-					wip_user = "{0} <{1}>".format(args.user, args.email)
-				else:
-					wip_user = args.user
-
-				f.writelines([
-					"[paths]",
-					"default = {0}".format(filled_tpl),
-					"[ui]",
-					"user = {0}".format(wip_user),
-				])
+			if not path.exists(hgrc):
+				with open(hgrc, 'w', encoding='utf-8') as f:
+					f.writelines([
+						"[paths]\n",
+						"default = {0}\n".format(filled_tpl),
+						"[ui]\n",
+						"user = {0}\n".format(wip_user),
+					])
+			else:
+				with open(hgrc, 'a', encoding='utf-8') as f:
+					f.writelines([
+						"[paths]\n",
+						"default = {0}\n".format(filled_tpl),
+						"[ui]\n",
+						"user = {0}\n".format(wip_user),
+					])
