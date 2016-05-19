@@ -11,7 +11,7 @@ fi
 
 if [ "$2" = "yes" ];then
 	convert "$filename" \
-	    -fill '#000f' -draw 'rectangle 174,1044,270,1076' \
+	    -fill '#000f' -draw 'rectangle 168,1044,270,1076' \
 	    -font 'AveriaSerif-Regular' -pointsize 20 \
 	    -fill red -annotate +184+1067 'Sigils' \
 	    "$filename"
