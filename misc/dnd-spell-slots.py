@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from collections import OrderedDict as od
 from argparse import ArgumentParser
 
 def caster_slots(level):
