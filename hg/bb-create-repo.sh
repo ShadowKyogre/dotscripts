@@ -11,6 +11,7 @@ BB_USER="$(sed -n 3p "$HOME/.config/.bb_auth")"
 
 DEF_BB_FILTER=".links.clone[1].href"
 BB_FILTER="${BB_FILTER:-${DEF_BB_FILTER}}"
+BB_SCM="${BB_SCM:-hg}"
 
 for repo in $@;do
 	OWNER="${BB_OWNER:-${BB_USER}}"
@@ -19,7 +20,7 @@ for repo in $@;do
 		--data name="$repo" \
 		--data fork_policy=no_public_forks \
 		--data is_private='true' \
-		--data scm=hg|jq "${BB_FILTER}" -r)"
+		--data scm="${BB_SCM}"|jq "${BB_FILTER}" -r)"
 	if [ "$DATA" = "null" ];then
 		DATA="$(curl -X GET --user "${BB_LOGIN}:${BB_PW}" \
 		"https://api.bitbucket.org/2.0/repositories/${OWNER}/${repo}"| \
