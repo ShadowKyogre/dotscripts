@@ -11,9 +11,14 @@ fi
 
 if [ "$2" = "yes" ];then
 	convert "$filename" \
-	    -fill '#000f' -draw 'rectangle 168,1044,270,1076' \
+	    -fill '#000f' -draw 'rectangle 162,1044,265,1076' \
 	    -font 'AveriaSerif-Regular' -pointsize 20 \
 	    -fill red -annotate +184+1067 'Sigils' \
+	    "$filename"
+	convert "$filename" \
+	    -fill '#000f' -draw 'rectangle 162,2124,265,2156' \
+	    -font 'AveriaSerif-Regular' -pointsize 20 \
+	    -fill red -annotate +184+2147 'Sigils' \
 	    "$filename"
 fi
 notify-send "Screenshot saved" "$filename"
