@@ -4,9 +4,9 @@ filename="/tmp/$(date +%F-%H%M%S).png"
 sleep "${1:-0}"
 
 if [ "$3" = "yes" ];then
-	maim --showcursor "$filename"
-else
 	maim "$filename"
+else
+	maim --hidecursor "$filename"
 fi
 
 if [ "$2" = "yes" ];then
