@@ -15,3 +15,8 @@ xsetwacom set "Wacom Bamboo 2FG 4x5 Pen stylus" MapToOutput "${TARGET_MONITOR}"
 xsetwacom set "Wacom Bamboo 2FG 4x5 Finger touch" MapToOutput "${TARGET_MONITOR}"
 xsetwacom set "Wacom Bamboo 2FG 4x5 Pad pad" MapToOutput "${TARGET_MONITOR}"
 xsetwacom set "Wacom Bamboo 2FG 4x5 Pen eraser" MapToOutput "${TARGET_MONITOR}"
+
+xsetwacom set "Wacom Intuos BT M Pen stylus" MapToOutput "${TARGET_MONITOR}"
+xsetwacom set "Wacom Intuos BT M Pen cursor" MapToOutput "${TARGET_MONITOR}"
+xsetwacom set "Wacom Intuos BT M Pad pad" MapToOutput "${TARGET_MONITOR}"
+xsetwacom set "Wacom Intuos BT M Pen eraser" MapToOutput "${TARGET_MONITOR}"

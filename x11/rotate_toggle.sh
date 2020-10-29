@@ -12,7 +12,7 @@ do
 	fi
 done
 
-touch_ids=$(xsetwacom --list devices|grep "type: TOUCH"|grep -Eo "id: [0-9]+"|sed 's/id: //g;s/\\n/ /g')
+touch_ids=$(xsetwacom --list devices|grep -e "type: \(TOUCH\|PAD\)"|grep -Eo "id: [0-9]+"|sed 's/id: //g;s/\\n/ /g')
 touch_ids=(${touch_ids//:/ })
 tLen=${#touch_ids[@]}
 for ((i=0; i<${tLen}; i++ ));
