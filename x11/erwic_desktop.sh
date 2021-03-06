@@ -2,6 +2,7 @@
 
 json_path="${HOME}/.config/Vieb/erwic/${1}.json"
 outname="${HOME}/.local/share/applications/vieb/${1}.desktop"
+data_path="${HOME}/.config/Vieb/erwic/app-data/${1}"
 name="$(jq -r .name "${json_path}")"
 desc="Run ${name} in a Vieb container"
 icon="$(jq -r .icon "${json_path}")"
